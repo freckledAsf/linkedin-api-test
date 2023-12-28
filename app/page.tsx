@@ -40,23 +40,28 @@ export default function Home() {
           />
         </div>
       </div>
-      <div className="flex gap-6">
+      <div className="flex gap-6 items-center">
         <SubmitButton
           isLoading={isPending}
           disabled={isPending}
           className="font-bold w-32"
-          onClick={() =>
-            startTransition(() => {
-              if (!inputRef.current?.value) {
-                toast({
-                  variant: "destructive",
-                  title: "No linkedin url was specified",
-                });
-              } else {
-                fetchData(inputRef.current.value);
-              }
-            })
-          }
+          onClick={() => {
+            if (!inputRef.current?.value) {
+              toast({
+                variant: "destructive",
+                title: "No linkedin url was specified",
+              });
+            } else {
+              const array = inputRef.current.value.split(" ");
+              startTransition(() => {
+                const interval = setInterval(() => {
+                  const batch = array.splice(0, 10);
+                  batch.map((link) => fetchData(link));
+                  if (array.length <= 0) clearInterval(interval);
+                }, 60 * 1000);
+              });
+            }
+          }}
         >
           Test
         </SubmitButton>
@@ -78,8 +83,9 @@ export default function Home() {
           <ClipboardCopyIcon className="mr-2 h-4 w-4" />
           Copy to clipboard
         </Button>
+        <p className="font-semibold">{profiles.length} profiles processed</p>
       </div>
-      <div className="flex gap-6">
+      <div className="flex gap-6 flex-wrap">
         {profiles.map((profile, i) => (
           <ProfileCard key={i} {...{ profile }} />
         ))}

@@ -19,7 +19,7 @@ export default function Home() {
 
   const fetchData = async (linkedin_url: string) => {
     const data: Profile = await axios
-      .post("/api/linkedin", {
+      .post("/api/rapidapi", {
         linkedin_url,
       })
       .then((res) => res.data);

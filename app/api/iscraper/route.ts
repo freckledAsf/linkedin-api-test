@@ -1,4 +1,4 @@
-import { Profile } from "@/types";
+import { Profile } from "@/types/RapidAPI";
 import axios from "axios";
 import { NextResponse } from "next/server";
 
@@ -7,10 +7,9 @@ export async function POST(req: Request) {
     const { profile_id } = await req.json();
     if (!profile_id) throw Error("Profile id not specified");
 
-    const options = {
-      method: "GET",
-      url: "https://fresh-linkedin-profile-data.p.rapidapi.com/get-linkedin-profile",
-      params: {
+    const { data } = await axios.post(
+      "https://api.iscraper.io/v2/profile-details",
+      {
         profile_id,
         profile_type: "personal",
         bypass_cache: false,
@@ -18,13 +17,13 @@ export async function POST(req: Request) {
         network_info: false,
         contact_info: true,
       },
-      headers: {
-        "X-API-Key": process.env.ISCRAPER_API_KEY,
-      },
-    };
+      {
+        headers: {
+          "X-API-KEY": process.env.ISCRAPER_API_KEY,
+        },
+      }
+    );
 
-    const res = await axios.request(options);
-    const data: Profile = res.data.data;
     return NextResponse.json(data);
   } catch (error) {
     console.log(error);

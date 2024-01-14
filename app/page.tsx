@@ -1,7 +1,8 @@
 "use client";
 
 import axios from "axios";
-import { Profile } from "@/types";
+import { Profile as RapidAPIProfile } from "@/types/RapidAPI";
+import { Profile as IScraperProfile } from "@/types/IScraper";
 import { useRef, useState, useTransition } from "react";
 import ProfileCard from "@/components/ui/profileCard";
 import SubmitButton from "@/components/ui/submitButton";
@@ -12,18 +13,32 @@ import { Toaster } from "@/components/ui/toaster";
 import { Input } from "@/components/ui/input";
 
 export default function Home() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [rapidAPIprofiles, setRapidAPIProfiles] = useState<RapidAPIProfile[]>(
+    []
+  );
+  const [iScraperProfiles, setIScraperProfiles] = useState<IScraperProfile[]>(
+    []
+  );
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const fetchData = async (linkedin_url: string) => {
-    const data: Profile = await axios
+  const fetchRapidAPI = async (linkedin_url: string) => {
+    const data: RapidAPIProfile = await axios
       .post("/api/rapidapi", {
         linkedin_url,
       })
       .then((res) => res.data);
-    setProfiles((prev) => [...prev, data]);
+    setRapidAPIProfiles((prev) => [...prev, data]);
+  };
+
+  const fetchIScraper = async (profile_id: string) => {
+    const data = await axios
+      .post("/api/iscraper", {
+        profile_id,
+      })
+      .then((res) => res.data);
+    setIScraperProfiles((prev) => [...prev, data]);
   };
 
   return (
@@ -56,19 +71,46 @@ export default function Home() {
               startTransition(() => {
                 const interval = setInterval(() => {
                   const batch = array.splice(0, 10);
-                  batch.map((link) => fetchData(link));
+                  batch.map((link) => fetchRapidAPI(link));
                   if (array.length <= 0) clearInterval(interval);
                 }, 60 * 1000);
               });
             }
           }}
         >
-          Test
+          RapidAPI
+        </SubmitButton>
+        <SubmitButton
+          isLoading={isPending}
+          disabled={isPending}
+          className="font-bold w-32"
+          onClick={() => {
+            if (!inputRef.current?.value) {
+              toast({
+                variant: "destructive",
+                title: "No linkedin url was specified",
+              });
+            } else {
+              const array = inputRef.current.value.split(" ");
+              startTransition(() => {
+                const interval = setInterval(() => {
+                  const batch = array.splice(0, 10);
+                  batch.map((link) => {
+                    const array = link.split("/");
+                    fetchIScraper(array[array.length - 1]);
+                  });
+                  if (array.length <= 0) clearInterval(interval);
+                }, 60 * 1000);
+              });
+            }
+          }}
+        >
+          iScrapper
         </SubmitButton>
         <Button
           onClick={() => {
             try {
-              navigator.clipboard.writeText(JSON.stringify(profiles));
+              navigator.clipboard.writeText(JSON.stringify(rapidAPIprofiles));
               toast({
                 title: "Profiles copied to clipboard.",
               });
@@ -81,13 +123,48 @@ export default function Home() {
           }}
         >
           <ClipboardCopyIcon className="mr-2 h-4 w-4" />
-          Copy to clipboard
+          Copy RapidAPI profiles
         </Button>
-        <p className="font-semibold">{profiles.length} profiles processed</p>
+        <Button
+          onClick={() => {
+            try {
+              navigator.clipboard.writeText(JSON.stringify(iScraperProfiles));
+              toast({
+                title: "Profiles copied to clipboard.",
+              });
+            } catch (error) {
+              toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+              });
+            }
+          }}
+        >
+          <ClipboardCopyIcon className="mr-2 h-4 w-4" />
+          Copy iScraper profiles
+        </Button>
+        <p className="font-semibold">
+          {rapidAPIprofiles.length} profiles processed
+        </p>
       </div>
       <div className="flex gap-6 flex-wrap">
-        {profiles.map((profile, i) => (
-          <ProfileCard key={i} {...{ profile }} />
+        <p className="font-bold">RapidAPI:</p>
+        {rapidAPIprofiles.map((profile, i) => (
+          <ProfileCard
+            key={i}
+            imageUrl={profile.profile_image_url}
+            fullName={profile.full_name}
+          />
+        ))}
+      </div>
+      <div className="flex gap-6 flex-wrap">
+        <p className="font-bold">IScraper:</p>
+        {iScraperProfiles.map((profile, i) => (
+          <ProfileCard
+            key={i}
+            imageUrl={profile.profile_picture}
+            fullName={`${profile.first_name} ${profile.last_name}`}
+          />
         ))}
       </div>
       <Toaster />

@@ -1,4 +1,4 @@
-import { Profile } from "@/types";
+import { Profile } from "@/types/RapidAPI";
 import axios from "axios";
 import { NextResponse } from "next/server";
 

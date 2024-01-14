@@ -1,21 +1,20 @@
-import { Profile } from "@/types";
+import { Profile } from "@/types/RapidAPI";
 import Image from "next/image";
 
 interface Props {
-  profile: Profile;
+  imageUrl: string;
+  fullName: string;
 }
 
-const ProfileCard = ({ profile }: Props) => (
+const ProfileCard = ({ imageUrl, fullName }: Props) => (
   <div className="flex flex-col rounded-md gap-4 border p-4">
     <div className="flex items-center gap-6">
       <div className="relative rounded-full overflow-hidden h-12 w-12">
-        <Image
-          src={profile.profile_image_url}
-          alt={`${profile.full_name} avatar`}
-          fill
-        />
+        {imageUrl && imageUrl != "" && (
+          <Image src={imageUrl} alt={`${fullName} avatar`} fill />
+        )}
       </div>
-      <p className="font-semibold">{profile.full_name}</p>
+      <p className="font-semibold">{fullName}</p>
     </div>
   </div>
 );
